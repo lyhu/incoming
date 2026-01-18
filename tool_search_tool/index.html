@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Tool Search Tool 原理演示 - Server-Side Execution</title>
+    <style>
+        :root {
+            --primary: #7c4dff;
+            --secondary: #00e5ff;
+            --accent: #ec4899;
+            --bg-dark: #0f172a;
+            --lifeline-color: rgba(148, 163, 184, 0.25);
+            --arrow-color: var(--secondary);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --json-key: #7dd3fc;
+            --json-string: #a5d6ff;
+            --json-number: #c4b5fd;
+            --json-boolean: #fbbf24;
+            --json-null: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            padding: 24px;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            margin-top: 6px;
+            font-size: 0.95rem;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            flex: 1;
+            padding: 32px;
+            gap: 32px;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .sequence-diagram {
+            position: relative;
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 16px;
+            padding: 70px 0 24px 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            min-height: 900px;
+        }
+
+        .lifelines {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            pointer-events: none;
+        }
+
+        .lifeline-col {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .lifeline-col::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 24px;
+            width: 1px;
+            border-left: 2px dashed var(--lifeline-color);
+        }
+
+        .actor-label {
+            position: absolute;
+            top: -56px;
+            background: var(--primary);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            z-index: 5;
+        }
+
+        .actor-label.registry {
+            background: #0ea5e9;
+        }
+
+        .actor-label.real-tool {
+            background: var(--accent);
+        }
+
+        .message-layer {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        .msg-arrow {
+            position: absolute;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            opacity: 0.35;
+        }
+
+        .msg-arrow:hover {
+            opacity: 0.75;
+        }
+
+        .msg-arrow.active {
+            opacity: 1;
+            filter: drop-shadow(0 0 8px var(--secondary));
+        }
+
+        .msg-arrow.highlight-request .msg-line {
+            background: #22c55e;
+        }
+
+        .msg-arrow.highlight-request .msg-line::after {
+            border-left-color: #22c55e;
+        }
+
+        .msg-arrow.highlight-response .msg-line {
+            background: #f59e0b;
+        }
+
+        .msg-arrow.highlight-response .msg-line::after {
+            border-right-color: #f59e0b;
+        }
+
+        .msg-line {
+            height: 2px;
+            background: var(--arrow-color);
+            position: relative;
+            flex: 1;
+        }
+
+        .msg-line::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -5px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 9px solid var(--arrow-color);
+        }
+
+        .msg-line.reverse::after {
+            right: auto;
+            left: 0;
+            border-left: none;
+            border-right: 9px solid var(--arrow-color);
+        }
+
+        .msg-label {
+            position: absolute;
+            top: -22px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--secondary);
+            font-weight: 500;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+        }
+
+        .msg-num {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: var(--secondary);
+            color: #0f172a;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 5px;
+            box-shadow: 0 0 6px var(--secondary);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .step-info {
+            background: rgba(124, 77, 255, 0.12);
+            padding: 18px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            font-size: 0.95rem;
+            line-height: 1.65;
+        }
+
+        .json-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 18px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            max-height: 72vh;
+        }
+
+        .json-header {
+            font-size: 0.85rem;
+            color: var(--secondary);
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+        }
+
+        .json-viewer {
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            white-space: pre;
+            overflow: auto;
+            color: var(--text-main);
+            line-height: 1.55;
+            flex: 1;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        button {
+            padding: 10px 22px;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(124, 77, 255, 0.5);
+        }
+
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .json-key {
+            color: var(--json-key);
+        }
+
+        .json-string {
+            color: var(--json-string);
+        }
+
+        .json-number {
+            color: var(--json-number);
+        }
+
+        .json-boolean {
+            color: var(--json-boolean);
+        }
+
+        .json-null {
+            color: var(--json-null);
+        }
+
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Claude Tool Search Tool</h1>
+        <p class="subtitle">Server-Side Execution 模型（MCP Server 托管工具场景）</p>
+    </div>
+    <div class="main-container">
+        <div class="sequence-view">
+            <div class="controls">
+                <button id="prevBtn" disabled>◀ 上一步</button>
+                <button id="nextBtn">开始演示 ▶</button>
+                <button id="resetBtn">重置</button>
+            </div>
+            <div class="sequence-diagram" id="diagram">
+                <div class="lifelines">
+                    <div class="lifeline-col">
+                        <div class="actor-label">Client</div>
+                    </div>
+                    <div class="lifeline-col">
+                        <div class="actor-label">Service (API)</div>
+                    </div>
+                    <div class="lifeline-col">
+                        <div class="actor-label">Model</div>
+                    </div>
+                    <div class="lifeline-col">
+                        <div class="actor-label registry">Registry (MCP)</div>
+                    </div>
+                    <div class="lifeline-col">
+                        <div class="actor-label real-tool">Weather Tool</div>
+                    </div>
+                </div>
+                <div class="message-layer" id="arrows"></div>
+            </div>
+        </div>
+        <div class="sidebar">
+            <div class="step-info" id="stepInfo">点击"开始演示"，体验 Server-Side Execution（MCP
+                托管工具）的完整流程。<br><strong>前提条件</strong>：工具由 MCP Server 托管，服务端可自动执行。<br><em>标准 API
+                    模式下，自定义工具需要客户端执行，涉及多次请求/响应。</em></div>
+            <div class="json-card">
+                <div class="json-header" id="jsonTitle">协议数据 (Protocol Payload)</div>
+                <div class="json-viewer" id="jsonViewer">// 请求/响应 JSON 将在此显示</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const actorIndex = { client: 0, service: 1, model: 2, registry: 3, real_tool: 4 };
+        function getActorCenter(name) { return (actorIndex[name] * 20) + 10; }
+
+        const steps = [
+            {
+                num: 1, label: "[REQUEST] 初始请求",
+                from: "client", to: "service",
+                highlight: "request",
+                desc: "<strong>Client → Service</strong>: 发送 API 请求。<code>get_weather</code> 使用 <code>defer_loading: true</code>。<br><em>注：此演示假设 get_weather 由 MCP Server 托管，服务端可自动执行。</em>",
+                code: {
+                    "model": "claude-sonnet-4-5-20250929",
+                    "max_tokens": 2048,
+                    "messages": [
+                        { "role": "user", "content": "What is the weather in San Francisco?" }
+                    ],
+                    "tools": [
+                        {
+                            "type": "tool_search_tool_regex_20251119",
+                            "name": "tool_search_tool_regex"
+                        },
+                        {
+                            "name": "get_weather",
+                            "description": "Get the weather at a specific location",
+                            "input_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "location": { "type": "string" },
+                                    "unit": { "type": "string", "enum": ["celsius", "fahrenheit"] }
+                                },
+                                "required": ["location"]
+                            },
+                            "defer_loading": true
+                        }
+                    ]
+                }
+            },
+            {
+                num: 2, label: "转发推理",
+                from: "service", to: "model",
+                desc: "<strong>Service → Model</strong>: API 网关将请求转发给 Claude 模型。<strong>关键点</strong>：Model 此时<strong>仅能看到</strong> <code>tool_search_tool</code>，<code>get_weather</code> 等 defer_loading 工具<strong>完全不可见</strong>。",
+                code: {
+                    "messages": [
+                        { "role": "user", "content": "What is the weather in San Francisco?" }
+                    ],
+                    "tools": [
+                        {
+                            "type": "tool_search_tool_regex_20251119",
+                            "name": "tool_search_tool_regex"
+                        }
+                    ]
+                }
+            },
+            {
+                num: 3, label: "触发工具搜索",
+                from: "model", to: "service",
+                desc: "<strong>Model → Service</strong>: 模型发现需要天气工具但不可见，发出 <code>server_tool_use</code> 请求检索。",
+                code: {
+                    "type": "server_tool_use",
+                    "id": "srvtoolu_01ABC123",
+                    "name": "tool_search_tool_regex",
+                    "input": { "query": "weather" }
+                }
+            },
+            {
+                num: 4, label: "检索工具定义",
+                from: "service", to: "registry",
+                desc: "<strong>Service → Registry/MCP</strong>: 服务层根据 query 匹配 defer_loading 工具列表。",
+                code: {
+                    "search_query": "weather",
+                    "matching_tools": ["get_weather"]
+                }
+            },
+            {
+                num: 5, label: "返回 Schema",
+                from: "registry", to: "service",
+                desc: "<strong>Registry → Service</strong>: 返回匹配工具的完整 Schema。",
+                code: {
+                    "name": "get_weather",
+                    "description": "Get the weather at a specific location",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "location": { "type": "string" },
+                            "unit": { "type": "string", "enum": ["celsius", "fahrenheit"] }
+                        },
+                        "required": ["location"]
+                    }
+                }
+            },
+            {
+                num: 6, label: "注入定义到上下文",
+                from: "service", to: "model",
+                desc: "<strong>Service → Model</strong>: 将检索结果作为 <code>tool_search_tool_result</code> 自动注入模型上下文，Schema 被自动展开。",
+                code: {
+                    "type": "tool_search_tool_result",
+                    "tool_use_id": "srvtoolu_01ABC123",
+                    "content": {
+                        "type": "tool_search_tool_search_result",
+                        "tool_references": [
+                            { "type": "tool_reference", "tool_name": "get_weather" }
+                        ]
+                    }
+                }
+            },
+            {
+                num: 7, label: "生成工具调用",
+                from: "model", to: "service",
+                desc: "<strong>Model → Service</strong>: 模型基于注入的 Schema 生成正式的 <code>tool_use</code>。",
+                code: {
+                    "type": "tool_use",
+                    "id": "toolu_01XYZ789",
+                    "name": "get_weather",
+                    "input": {
+                        "location": "San Francisco",
+                        "unit": "fahrenheit"
+                    }
+                }
+            },
+            {
+                num: 8, label: "调用实际天气 API",
+                from: "service", to: "real_tool",
+                desc: "<strong>Service → Weather Tool</strong>: 服务层（或通过 MCP）调用真实的天气服务。",
+                code: {
+                    "tool_name": "get_weather",
+                    "input": {
+                        "location": "San Francisco",
+                        "unit": "fahrenheit"
+                    }
+                }
+            },
+            {
+                num: 9, label: "返回天气数据",
+                from: "real_tool", to: "service",
+                desc: "<strong>Weather Tool → Service</strong>: 天气服务返回实时数据。",
+                code: {
+                    "location": "San Francisco, CA",
+                    "temperature": 72,
+                    "unit": "fahrenheit",
+                    "conditions": "Sunny"
+                }
+            },
+            {
+                num: 10, label: "提交结果并生成回复",
+                from: "service", to: "model",
+                desc: "<strong>Service → Model</strong>: 将工具执行结果作为 <code>tool_result</code> 提交，模型生成最终回复。",
+                code: {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_01XYZ789",
+                    "content": "San Francisco, CA: 72°F, Sunny"
+                }
+            },
+            {
+                num: 11, label: "[RESPONSE] 返回最终回复",
+                from: "service", to: "client",
+                highlight: "response",
+                desc: "<strong>Service → Client</strong>: 返回被 Model 润色后的完整响应。",
+                code: {
+                    "id": "msg_01XYZ123",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "claude-sonnet-4-5-20250929",
+                    "content": [
+                        { "type": "text", "text": "I'll search for tools to help with the weather information." },
+                        { "type": "server_tool_use", "id": "srvtoolu_01ABC123", "name": "tool_search_tool_regex", "input": { "query": "weather" } },
+                        { "type": "tool_search_tool_result", "tool_use_id": "srvtoolu_01ABC123", "content": { "type": "tool_search_tool_search_result", "tool_references": [{ "type": "tool_reference", "tool_name": "get_weather" }] } },
+                        { "type": "text", "text": "I found a weather tool. Let me get the weather for San Francisco." },
+                        { "type": "tool_use", "id": "toolu_01XYZ789", "name": "get_weather", "input": { "location": "San Francisco", "unit": "fahrenheit" } },
+                        { "type": "tool_result", "tool_use_id": "toolu_01XYZ789", "content": "San Francisco, CA: 72°F, Sunny" },
+                        { "type": "text", "text": "The weather in San Francisco is currently **72°F** and **Sunny**. Perfect weather for outdoor activities!" }
+                    ],
+                    "stop_reason": "end_turn",
+                    "usage": {
+                        "input_tokens": 1024,
+                        "output_tokens": 256
+                    }
+                }
+            }
+        ];
+
+        let currentStep = -1;
+
+        function highlightJSON(json) {
+            if (!json) return '';
+            let str = JSON.stringify(json, null, 2);
+            str = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return str.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) { cls = /:$/.test(match) ? 'json-key' : 'json-string'; }
+                else if (/true|false/.test(match)) { cls = 'json-boolean'; }
+                else if (/null/.test(match)) { cls = 'json-null'; }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function createArrows() {
+            const container = document.getElementById('arrows');
+            container.innerHTML = '';
+            steps.forEach((s, i) => {
+                const arrow = document.createElement('div');
+                arrow.className = 'msg-arrow';
+                if (s.highlight === 'request') arrow.classList.add('highlight-request');
+                if (s.highlight === 'response') arrow.classList.add('highlight-response');
+                arrow.id = `step-${i}`;
+                const startX = getActorCenter(s.from), endX = getActorCenter(s.to);
+                const left = Math.min(startX, endX), width = Math.abs(startX - endX);
+                const isReverse = startX > endX;
+                arrow.style.left = left + '%';
+                arrow.style.width = width + '%';
+                arrow.style.top = (i * 68 + 32) + 'px';
+                arrow.innerHTML = `<div class="msg-line ${isReverse ? 'reverse' : ''}"></div><div class="msg-label"><span class="msg-num">${s.num}</span>${s.label}</div>`;
+                arrow.addEventListener('click', () => { currentStep = i; updateUI(); });
+                container.appendChild(arrow);
+            });
+        }
+
+        function updateUI() {
+            const nextBtn = document.getElementById('nextBtn'), prevBtn = document.getElementById('prevBtn');
+            const stepInfo = document.getElementById('stepInfo'), jsonViewer = document.getElementById('jsonViewer');
+            document.querySelectorAll('.msg-arrow').forEach(a => a.classList.remove('active'));
+            if (currentStep === -1) {
+                stepInfo.innerHTML = '点击"开始演示"，体验 Server-Side Execution（MCP 托管工具）的完整流程。<br><strong>前提条件</strong>：工具由 MCP Server 托管，服务端可自动执行。<br><em>标准 API 模式下，自定义工具需要客户端执行，涉及多次请求/响应。</em>';
+                jsonViewer.innerHTML = '// 请求/响应 JSON 将在此显示';
+                nextBtn.innerText = '开始演示 ▶';
+                prevBtn.disabled = true;
+                return;
+            }
+            const step = steps[currentStep];
+            stepInfo.innerHTML = `<strong>步骤 ${step.num}: ${step.label}</strong><br>${step.desc}`;
+            jsonViewer.innerHTML = highlightJSON(step.code);
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+            prevBtn.disabled = currentStep === 0;
+            nextBtn.innerText = currentStep === steps.length - 1 ? '完成' : '下一步 ▶';
+        }
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (currentStep < steps.length - 1) { currentStep++; updateUI(); }
+            else { currentStep = -1; updateUI(); }
+        });
+        document.getElementById('prevBtn').addEventListener('click', () => { if (currentStep > 0) { currentStep--; updateUI(); } });
+        document.getElementById('resetBtn').addEventListener('click', () => { currentStep = -1; updateUI(); });
+        createArrows();
+    </script>
+</body>
+
+</html>

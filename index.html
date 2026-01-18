@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incoming - 技术学习知识库</title>
+    <style>
+        :root {
+            --primary: #7c4dff;
+            --secondary: #00e5ff;
+            --accent: #ec4899;
+            --success: #10b981;
+            --bg-dark: #0a0e1a;
+            --bg-darker: #050811;
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --text-dimmer: #64748b;
+            --border-color: rgba(124, 77, 255, 0.2);
+            --glow-primary: rgba(124, 77, 255, 0.5);
+            --glow-secondary: rgba(0, 229, 255, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 动态背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 50%, rgba(124, 77, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 229, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes backgroundShift {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* 头部导航 */
+        header {
+            padding: 32px 0 80px;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+            box-shadow: 0 8px 32px var(--glow-primary);
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .description {
+            font-size: 1rem;
+            color: var(--text-dimmer);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* 统计数据 */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 28px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 40px var(--glow-primary);
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* 内容区域 */
+        .content-grid {
+            display: grid;
+            gap: 48px;
+            margin-bottom: 80px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 32px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        /* 文章卡片 */
+        .article-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+
+        .article-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--glow-primary) 0%, var(--glow-secondary) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: -1;
+        }
+
+        .article-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 60px var(--glow-primary);
+        }
+
+        .article-card:hover::after {
+            opacity: 0.1;
+        }
+
+        .article-header {
+            padding: 32px 32px 0;
+        }
+
+        .article-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(124, 77, 255, 0.15);
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .article-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .article-desc {
+            color: var(--text-dim);
+            line-height: 1.8;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .article-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .tag {
+            padding: 6px 12px;
+            background: rgba(100, 116, 139, 0.2);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+            background: rgba(124, 77, 255, 0.2);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .article-content {
+            padding: 0 32px 32px;
+        }
+
+        .article-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 20px var(--glow-primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--glow-primary);
+        }
+
+        .btn-secondary {
+            background: rgba(100, 116, 139, 0.2);
+            color: var(--text-main);
+            border: 1px solid rgba(100, 116, 139, 0.4);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(124, 77, 255, 0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* 功能特性网格 */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .feature-item {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 40px rgba(124, 77, 255, 0.2);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px var(--glow-primary);
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* 页脚 */
+        footer {
+            padding: 48px 0;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-link:hover {
+            color: var(--primary);
+        }
+
+        .footer-text {
+            color: var(--text-dimmer);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .footer-motto {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 16px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .article-title {
+                font-size: 1.4rem;
+            }
+
+            .article-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-darker);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--secondary), var(--accent));
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header>
+            <div class="logo">
+                <div class="logo-icon">IN</div>
+            </div>
+            <h1>Incoming</h1>
+            <p class="subtitle">技术学习知识库</p>
+            <p class="description">
+                系统化的前沿技术研究与可视化演示平台<br>
+                深度解析 AI 技术原理，通过交互式演示将复杂概念具象化
+            </p>
+        </header>
+
+        <!-- 统计数据 -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">技术专题</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">交互式演示</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">11</div>
+                <div class="stat-label">可视化步骤</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">85%</div>
+                <div class="stat-label">Token 节省</div>
+            </div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-grid">
+            <!-- 专题文章区 -->
+            <section>
+                <h2 class="section-title">📚 技术专题</h2>
+
+                <div class="article-card">
+                    <div class="article-header">
+                        <span class="article-badge">
+                            <span>🔥</span> 最新发布
+                        </span>
+                        <h3 class="article-title">Claude Tool Search Tool 深度解析</h3>
+                        <p class="article-desc">
+                            深入剖析 Anthropic Claude 平台的动态工具发现与按需加载机制。详解 defer_loading
+                            工具加载策略、关键协议消息格式，以及 MCP Server 在工具托管场景中的核心作用。
+                        </p>
+                        <div class="article-tags">
+                            <span class="tag"># AI Agent</span>
+                            <span class="tag"># Tool Management</span>
+                            <span class="tag"># MCP Protocol</span>
+                            <span class="tag"># Token Optimization</span>
+                        </div>
+                    </div>
+
+                    <div class="article-content">
+                        <!-- 核心亮点 -->
+                        <div class="features-grid">
+                            <div class="feature-item">
+                                <div class="feature-icon">⚡</div>
+                                <div class="feature-title">85% Token 节省</div>
+                                <div class="feature-desc">从 ~77K tokens 降至 ~8.7K tokens</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">🎯</div>
+                                <div class="feature-title">准确率提升</div>
+                                <div class="feature-desc">Opus 4 从 49% 提升至 74%</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">🔄</div>
+                                <div class="feature-title">动态加载</div>
+                                <div class="feature-desc">defer_loading 按需发现机制</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">🌐</div>
+                                <div class="feature-title">服务端闭环</div>
+                                <div class="feature-desc">MCP Server 托管模式</div>
+                            </div>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="article-actions" style="margin-top: 32px;">
+                            <a href="./tool_search_tool/" class="btn btn-primary" target="_blank">
+                                <span>🎨</span>
+                                <span>查看交互式演示</span>
+                            </a>
+                            <a href="https://github.com/lyhu/incoming/blob/main/tool_search_tool/Claude_Tool_Search_Tool_%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90.md"
+                                class="btn btn-secondary" target="_blank">
+                                <span>📖</span>
+                                <span>阅读技术文档</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 技术栈展示 -->
+            <section>
+                <h2 class="section-title">🛠️ 技术栈</h2>
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">📝</div>
+                        <div class="feature-title">文档撰写</div>
+                        <div class="feature-desc">Markdown + 技术写作规范<br>严谨、逻辑严密、术语准确</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🎨</div>
+                        <div class="feature-title">前端技术</div>
+                        <div class="feature-desc">HTML5 + CSS3 + Vanilla JS<br>无外部依赖的单文件架构</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        <div class="feature-title">可视化技术</div>
+                        <div class="feature-desc">时序图动画 + JSON 语法高亮<br>玻璃拟态现代化设计</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🌓</div>
+                        <div class="feature-title">设计系统</div>
+                        <div class="feature-desc">CSS 变量 + 深色主题<br>紫青双色调科技风格</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 页脚 -->
+        <footer>
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="https://github.com" class="footer-link">
+                        <span>📦</span> GitHub 仓库
+                    </a>
+                    <a href="./README.md" class="footer-link">
+                        <span>📘</span> 项目文档
+                    </a>
+                    <a href="https://github.com/issues" class="footer-link">
+                        <span>💬</span> 问题反馈
+                    </a>
+                </div>
+                <p class="footer-text">创建日期: 2026-01-18 | 持续更新中</p>
+                <p class="footer-text">© 2026 Incoming. MIT License</p>
+                <p class="footer-motto">技术驱动，持续精进 | Technology-Driven, Continuous Improvement</p>
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>
