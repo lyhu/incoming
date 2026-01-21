@@ -36,7 +36,24 @@
 
 ## 当前内容概览
 
-### 1. Claude Tool Search Tool 深度解析
+### 1. Palantir: 终极创始人孵化器
+
+#### 🎨 交互式演示
+
+- **交互式演示**：[https://lyhu.github.io/incoming/palantir/palantir_visualization.html](https://lyhu.github.io/incoming/palantir/palantir_visualization.html)
+- **主题**：Palantir 如何从咨询公司蜕变为千亿美金巨头
+- **核心内容**：
+  - 多角色视角（部门负责人、产品经理、架构师、研发人员）
+  - 80% 利润率：从咨询到软件平台的商业模式跃迁
+  - 30% 创业转化率：员工成为创始人的比例
+  - FDE 一线部署工程师模式
+  - Ontology 本体层架构设计
+
+#### 📖 原文链接
+
+- **链接**：[Palantir 创始人孵化器（微信公众号）](https://mp.weixin.qq.com/s/r8PtewR1ORyCJaVyYFSbsw)
+
+### 2. Claude Tool Search Tool 深度解析
 
 #### 📄 技术文档
 
@@ -53,7 +70,8 @@
 #### 🎨 交互式演示
 
 - **项目主页**：[https://lyhu.github.io/incoming](https://lyhu.github.io/incoming)
-- **交互式演示**：[https://lyhu.github.io/incoming/tool_search_tool](https://lyhu.github.io/incoming/tool_search_tool)
+- **Palantir 可视化**：[https://lyhu.github.io/incoming/palantir/palantir_visualization.html](https://lyhu.github.io/incoming/palantir/palantir_visualization.html)
+- **Tool Search Tool 演示**：[https://lyhu.github.io/incoming/tool_search_tool](https://lyhu.github.io/incoming/tool_search_tool)
 
 #### 📋 产品需求文档（AI 生成）
 

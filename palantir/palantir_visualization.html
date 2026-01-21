@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palantir: 终极创始人孵化器可视化</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        palantir: {
+                            dark: '#101113',
+                            gray: '#202226',
+                            light: '#E1E1E1',
+                            blue: '#00A3E0',
+                            accent: '#4C46C9',
+                            success: '#2ca02c'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-panel {
+                @apply bg-palantir-gray/50 backdrop-blur-md border border-white/5 shadow-xl;
+            }
+            .nav-item-active {
+                @apply bg-palantir-blue/10 text-palantir-blue border-palantir-blue;
+            }
+        }
+        body {
+            background-color: #050505;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(76, 70, 201, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 163, 224, 0.1) 0%, transparent 20%);
+        }
+    </style>
+</head>
+
+<body
+    class="text-gray-300 h-screen overflow-hidden font-sans selection:bg-palantir-blue/30 selection:text-white flex bg-[#050505]">
+
+    <!-- Left Sidebar: Nav -->
+    <aside
+        class="w-20 lg:w-64 bg-black/20 backdrop-blur-md border-r border-white/5 flex flex-col justify-between shrink-0 transition-all duration-300 z-50">
+        <!-- Logo Area -->
+        <div class="p-6 flex items-center justify-center lg:justify-start space-x-3">
+            <div
+                class="w-8 h-8 rounded bg-palantir-blue/20 flex items-center justify-center text-palantir-blue shrink-0">
+                <i class="ph ph-hexagon opacity-100 text-xl"></i>
+            </div>
+            <span class="font-bold text-white tracking-tight hidden lg:block animate-fade-in">Palantir Viz</span>
+        </div>
+
+        <!-- Role Selector (Vertical) -->
+        <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
+            <div class="px-3 mb-2 text-xs font-mono text-gray-500 hidden lg:block uppercase tracking-wider">Select Role
+            </div>
+
+            <button onclick="switchRole('leader')" id="btn-leader"
+                class="role-btn w-full p-3 rounded-xl transition-all duration-200 hover:bg-white/5 text-left border border-transparent group flex items-center">
+                <i
+                    class="ph ph-buildings text-2xl lg:mr-3 text-gray-400 group-hover:text-palantir-blue transition-colors"></i>
+                <div class="hidden lg:block">
+                    <div class="text-sm font-bold text-gray-300 group-hover:text-white">部门负责人</div>
+                    <div class="text-[10px] text-gray-600">Leader / CEO</div>
+                </div>
+            </button>
+
+            <button onclick="switchRole('pm')" id="btn-pm"
+                class="role-btn w-full p-3 rounded-xl transition-all duration-200 hover:bg-white/5 text-left border border-transparent group flex items-center">
+                <i
+                    class="ph ph-kanban text-2xl lg:mr-3 text-gray-400 group-hover:text-palantir-blue transition-colors"></i>
+                <div class="hidden lg:block">
+                    <div class="text-sm font-bold text-gray-300 group-hover:text-white">产品经理</div>
+                    <div class="text-[10px] text-gray-600">Product Manager</div>
+                </div>
+            </button>
+
+            <button onclick="switchRole('architect')" id="btn-architect"
+                class="role-btn w-full p-3 rounded-xl transition-all duration-200 hover:bg-white/5 text-left border border-transparent group flex items-center">
+                <i
+                    class="ph ph-network text-2xl lg:mr-3 text-gray-400 group-hover:text-palantir-blue transition-colors"></i>
+                <div class="hidden lg:block">
+                    <div class="text-sm font-bold text-gray-300 group-hover:text-white">架构师</div>
+                    <div class="text-[10px] text-gray-600">System Architect</div>
+                </div>
+            </button>
+
+            <button onclick="switchRole('dev')" id="btn-dev"
+                class="role-btn w-full p-3 rounded-xl transition-all duration-200 hover:bg-white/5 text-left border border-transparent group flex items-center">
+                <i
+                    class="ph ph-code text-2xl lg:mr-3 text-gray-400 group-hover:text-palantir-blue transition-colors"></i>
+                <div class="hidden lg:block">
+                    <div class="text-sm font-bold text-gray-300 group-hover:text-white">研发人员</div>
+                    <div class="text-[10px] text-gray-600">Developer / FDE</div>
+                </div>
+            </button>
+        </nav>
+
+        <!-- Footer / Link -->
+        <div class="p-6 border-t border-white/5">
+            <a href="https://mp.weixin.qq.com/s/r8PtewR1ORyCJaVyYFSbsw" target="_blank"
+                class="flex items-center text-xs text-gray-600 hover:text-palantir-blue transition-colors duration-300 group">
+                <i class="ph ph-link mr-2 text-lg lg:text-sm"></i>
+                <span class="hidden lg:inline">原文: Palantir 创始人孵化器</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area (Scrollable) -->
+    <main class="flex-1 h-screen overflow-y-auto relative">
+        <!-- Background Gradient Overlay -->
+        <div
+            class="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-palantir-blue/5 via-transparent to-transparent opacity-50">
+        </div>
+
+        <div class="max-w-7xl mx-auto p-6 lg:p-12">
+            <!-- Simplified Header (In-flow) -->
+            <header class="mb-10 animate-fade-in">
+                <h1 class="text-3xl md:text-5xl font-bold text-white tracking-tight mb-2">
+                    Palantir Founder Factory
+                </h1>
+                <p class="text-sm md:text-base text-gray-500 max-w-2xl">
+                    从“咨询公司”蜕变为千亿美金巨头的终极秘密。
+                </p>
+            </header>
+
+            <!-- Content Grid -->
+            <div id="content-area"
+                class="grid grid-cols-1 xl:grid-cols-12 gap-6 opacity-0 transition-opacity duration-300">
+
+                <!-- Center Column: Key Insights (Wider) -->
+                <div class="order-2 xl:order-1 xl:col-span-8 space-y-6">
+                    <!-- Hero Insight -->
+                    <div class="glass-panel p-8 rounded-2xl relative overflow-hidden min-h-[240px]">
+                        <div class="absolute top-0 right-0 p-8 opacity-5">
+                            <i id="hero-icon" class="ph ph-lightbulb text-9xl"></i>
+                        </div>
+                        <h2 id="insight-title" class="text-2xl font-bold text-white mb-4"></h2>
+                        <div id="insight-body"
+                            class="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed"></div>
+                    </div>
+
+                    <!-- Visualization -->
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xs font-mono text-palantir-blue uppercase tracking-wider">核心工作流
+                                Visualization</h3>
+                            <div class="h-px bg-white/10 flex-1 ml-4"></div>
+                        </div>
+                        <div id="viz-container"
+                            class="bg-black/40 rounded-xl p-6 min-h-[160px] flex items-center justify-center relative overflow-hidden">
+                            <!-- Dynamic Viz Inserted Here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Stats & Q&A (Narrower) -->
+                <div class="order-1 xl:order-2 xl:col-span-4 space-y-6">
+                    <!-- Dynamic Stats Cards (Grid 2 cols) -->
+                    <div id="stats-container" class="grid grid-cols-2 gap-3"></div>
+
+                    <!-- Dynamic Concept Card -->
+                    <div id="concept-container"></div>
+
+                    <!-- Q&A Section -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-mono text-gray-600 uppercase tracking-wider mb-1">Expert Q&A</h3>
+                        <div id="qa-container" class="space-y-2"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Javascript Data & Logic -->
+    <script>
+        // --- 1. Data Store ---
+        const contentData = {
+            leader: {
+                stats: [
+                    { label: '利润率增长', value: '20% → 80%', desc: '转型结果' },
+                    { label: '创业转化', value: '30%', desc: '成为创始人' }
+                ],
+                concept: {
+                    title: '反向筛选 (Reverse Filtering)',
+                    icon: 'ph-funnel',
+                    text: 'Palantir 公开宣称“守护西方价值”，这种“蝙蝠信号”过滤了不认同使命的人，精准吸引了 Top 1% 渴望解决复杂问题的人才。'
+                },
+                insight: {
+                    title: '人才哲学与商业模式',
+                    text: `
+                        <p class="mb-4"><strong>去职级化管理：</strong> 避免头衔带来的办公室政治。除了 CEO 和少数主管，大部分人都是“工程师”。这迫使员工通过实际贡献（Output）而非头衔（Title）来赢得影响力。</p>
+                        <p class="mb-4"><strong>商业本质的跃迁：</strong> 甚至在上市前，Palantir 常被误认为是“IT 咨询”。但咨询是堆人头（线性增长），产品是复用代码（指数增长）。通过强制要求将定制化代码沉淀为内部工具平台 (Dogfooding)，Palantir 实现了这一惊险的跃迁。</p>
+                    `
+                },
+                viz: `
+                    <div class="flex flex-col md:flex-row items-center justify-between w-full gap-2 text-center text-xs">
+                        <div class="p-3 border border-red-500/30 bg-red-500/5 rounded-lg w-full">
+                            <div class="text-red-400 font-bold">传统咨询</div>
+                            <div class="text-[10px] opacity-60 mt-1">定制服务</div>
+                        </div>
+                        <i class="ph ph-arrow-right text-xl text-gray-600 rotate-90 md:rotate-0"></i>
+                         <div class="p-3 border border-yellow-500/30 bg-yellow-500/5 rounded-lg w-full">
+                            <div class="text-yellow-400 font-bold">Dogfooding</div>
+                             <div class="text-[10px] opacity-60 mt-1">强制复用</div>
+                        </div>
+                         <i class="ph ph-arrow-right text-xl text-gray-600 rotate-90 md:rotate-0"></i>
+                         <div class="p-3 border border-green-500/30 bg-green-500/5 rounded-lg w-full">
+                            <div class="text-green-400 font-bold">软件平台</div>
+                             <div class="text-[10px] opacity-60 mt-1">80% Margin</div>
+                        </div>
+                    </div>
+                `,
+                qa: [
+                    { q: '如何识别高潜人才？', a: '不看学校光环，看“求胜欲”和“是否为某事拼过命”。' },
+                    { q: 'FDE 模式昂贵吗？', a: '昂贵。初期需 10 人服务一客户。但现在 AI 和平台成熟，1-2 人即可，且 LTV 极高。' }
+                ]
+            },
+            pm: {
+                stats: [
+                    { label: '迭代周期', value: '1 Week', desc: 'Demo Loop' },
+                    { label: '产品来源', value: '100%', desc: '一线实战' }
+                ],
+                concept: {
+                    title: '每周迭代 (Weekly Loop)',
+                    icon: 'ph-arrows-clockwise',
+                    text: '周一见客户，周二通宵改代码，周三再演示。这种极速反馈闭环让 Palantir 能在 6 周内交付千万美元价值的产品。'
+                },
+                insight: {
+                    title: '从定制到通用的产品演进',
+                    text: `
+                        <p class="mb-4"><strong>同理心设计：</strong> Foundry 并非产生于该空想，而是 FDE 蹲在空客的飞机组装车间里，看着工人用纸笔记录零件位置时诞生的。最好的产品经理是前线归来的战士。</p>
+                        <p class="mb-4"><strong>The "Consultancy" Trap:</strong> 最大的陷阱是沉迷于为单一客户做定制开发。必须时刻问自己：这个功能是只给这家空客用，还是能卖给全世界的航空公司？</p>
+                    `
+                },
+                viz: `
+                    <div class="relative w-full text-xs">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-32 h-32 border border-dashed border-palantir-blue/30 rounded-full animate-spin-slow"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 relative z-10 place-items-center">
+                            <div class="p-2 bg-black rounded border border-gray-800 text-center w-20">
+                                <i class="ph ph-users text-lg text-purple-400"></i>
+                                <div class="scale-90">Pain</div>
+                            </div>
+                            <div class="p-2 bg-black rounded border border-gray-800 text-center col-start-3 w-20">
+                                <i class="ph ph-code text-lg text-blue-400"></i>
+                                <div class="scale-90">Proto</div>
+                            </div>
+                            <div class="p-2 bg-palantir-blue/20 rounded border border-palantir-blue text-center col-start-2 row-start-2 w-24">
+                                <i class="ph ph-cube text-lg text-white"></i>
+                                <div class="font-bold text-white scale-90">Foundry</div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                qa: [
+                    { q: 'Palantir PM 有何不同？', a: '全是由一线工程师（FDE）提拔。只有懂代码、在一线滚过的 PM 才能服众。' },
+                    { q: '如何界定产品边界？', a: '不要害怕做“脏活累活”（如数据清理），那是护城河的来源。' }
+                ]
+            },
+            architect: {
+                stats: [
+                    { label: '核心架构', value: '3-Layer', desc: 'In/Logic/UI' },
+                    { label: '数据孤岛', value: 'Broken', desc: 'Ontology' }
+                ],
+                concept: {
+                    title: 'Ontology (本体层)',
+                    icon: 'ph-graph',
+                    text: '不仅仅是数仓。通过将 cryptic 的表名 (S3F1_Z) 映射为人类可读的“实体” (Plane #79)，构建了业务语义层。'
+                },
+                insight: {
+                    title: 'Gotham vs Foundry 技术架构',
+                    text: `
+                        <p class="mb-4"><strong>图 vs 表：</strong> <span class="text-purple-400">Gotham</span> (国防) 重度依赖 **图数据库 (Graph)**，用于追踪恐怖分子关系网络。 <span class="text-blue-400">Foundry</span> (商业) 侧重 **关系型数据 (SQL/Tabular)**，处理如 ERP 订单、供应链库存等结构化数据。</p>
+                        <p class="mb-4"><strong>打破看门人 (Gatekeepers)：</strong> 企业 IT 往往为了安全锁死数据。Palantir 的架构核心是：在通过细粒度权限控制 (ACL) 保证安全的前提下，让全员都能 access 到整合后的数据。</p>
+                    `
+                },
+                viz: `
+                     <div class="flex flex-col space-y-1 w-full max-w-sm mx-auto font-mono text-[10px]">
+                        <div class="bg-gray-800 p-1.5 rounded text-center border-b-2 border-gray-900">User Interface</div>
+                        <div class="bg-palantir-blue/20 p-2 rounded text-center border border-palantir-blue relative">
+                            <span class="font-bold text-sm text-white">ONTOLOGY LAYER</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1 opacity-50">
+                            <div class="bg-gray-800 p-1 rounded text-center">ERP</div>
+                            <div class="bg-gray-800 p-1 rounded text-center">IoT</div>
+                            <div class="bg-gray-800 p-1 rounded text-center">XLS</div>
+                        </div>
+                     </div>
+                `,
+                qa: [
+                    { q: '为什么企业数仓难用？', a: '90% 时间在清洗数据。Foundry 的价值在于解决了这 90% 的 Dirty Work。' },
+                    { q: '如何处理遗留系统？', a: '不替换，而是连接。利用 Virtual Tables 让数据驻留在原处但可被统一查询。' }
+                ]
+            },
+            dev: {
+                stats: [
+                    { label: '出差强度', value: '4 Days', desc: 'Weekly' },
+                    { label: '技术栈', value: 'Full Stack', desc: 'Infra+UI' }
+                ],
+                concept: {
+                    title: 'FDE (一线部署工程师)',
+                    icon: 'ph-laptop',
+                    text: '不是售前。FDE 是全栈特种兵，拥有直接修改核心代码库的权限。目标不是“部署软件”，而是“解决问题”。'
+                },
+                insight: {
+                    title: '工程师的终极成长路径',
+                    text: `
+                        <p class="mb-4"><strong>实战是最好的老师：</strong> 在 Palantir，你可能早上还在写 Python 处理数据管道，下午就要向空客的高管演示。这种 Full-Cycle (从理解业务到交付代码) 的能力培养了极强的商业嗅觉。</p>
+                        <p class="mb-4"><strong>AI 时代的工具链：</strong> Nabeel 推荐使用 <strong>WhisperFlow</strong> 快速语音输入 Prompt，使用 <strong>Claude CLI</strong> 在终端直接操作文件系统。不仅要会写代码，更要会 Orchestrate AI Agents。</p>
+                    `
+                },
+                viz: `
+                    <div class="flex items-center justify-between w-full text-[10px]">
+                        <div class="text-center group">
+                            <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-1 group-hover:bg-blue-500/20 transition-colors">
+                                <i class="ph ph-chat-circle-text text-lg"></i>
+                            </div>
+                            <div>痛点</div>
+                        </div>
+                        <div class="h-px flex-1 bg-gray-700 mx-2"></div>
+                         <div class="text-center group">
+                            <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-1 group-hover:bg-blue-500/20 transition-colors">
+                                <i class="ph ph-code text-lg"></i>
+                            </div>
+                            <div>开发</div>
+                        </div>
+                        <div class="h-px flex-1 bg-gray-700 mx-2"></div>
+                         <div class="text-center group">
+                            <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-1 group-hover:bg-blue-500/20 transition-colors">
+                                <i class="ph ph-rocket text-lg"></i>
+                            </div>
+                            <div>交付</div>
+                        </div>
+                    </div>
+                `,
+                qa: [
+                    { q: 'FDE 和外包区别？', a: '所有权。FDE 拥有解决问题的主动权。如果现有产品不行，FDE 有权写新工具。' },
+                    { q: '工作辛苦吗？', a: '非常辛苦，常年出差。但这种“战壕情谊”无价，也是合伙创业的基础。' }
+                ]
+            }
+        };
+
+        // --- 2. Logic Controller ---
+        let currentRole = 'leader';
+
+        function switchRole(roleKey) {
+            currentRole = roleKey;
+
+            // 1. Update Sidebar Buttons
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('bg-white/10', 'border-palantir-blue/30');
+                btn.classList.add('border-transparent');
+
+                // Reset icon color
+                const icon = btn.querySelector('i');
+                icon.classList.remove('text-palantir-blue');
+                icon.classList.add('text-gray-400');
+
+                // Reset text color
+                const title = btn.querySelector('.font-bold');
+                if (title) {
+                    title.classList.remove('text-white');
+                    title.classList.add('text-gray-300');
+                }
+            });
+
+            const activeBtn = document.getElementById(`btn-${roleKey}`);
+            activeBtn.classList.add('bg-white/10', 'border-palantir-blue/30');
+            activeBtn.classList.remove('border-transparent');
+
+            // Highlight icon
+            const activeIcon = activeBtn.querySelector('i');
+            activeIcon.classList.remove('text-gray-400');
+            activeIcon.classList.add('text-palantir-blue');
+
+            // Highlight text
+            const activeTitle = activeBtn.querySelector('.font-bold');
+            if (activeTitle) {
+                activeTitle.classList.remove('text-gray-300');
+                activeTitle.classList.add('text-white');
+            }
+
+
+            // 2. Animate Out
+            const contentArea = document.getElementById('content-area');
+            contentArea.classList.remove('opacity-100');
+            contentArea.classList.add('opacity-0', 'translate-y-2');
+
+            // 3. Update Content (with delay for animation)
+            setTimeout(() => {
+                renderContent(roleKey);
+                contentArea.classList.remove('opacity-0', 'translate-y-2');
+                contentArea.classList.add('opacity-100', 'transform-none');
+            }, 200);
+        }
+
+        function renderContent(roleKey) {
+            const data = contentData[roleKey];
+
+            // Stats
+            const statsHTML = data.stats.map(stat => `
+                <div class="glass-panel p-3 lg:p-4 rounded-xl flex flex-col justify-between group hover:border-palantir-blue/30 transition-colors h-full">
+                    <div class="text-xs text-gray-500 mb-1 uppercase tracking-wide">${stat.label}</div>
+                    <div>
+                        <div class="text-xl lg:text-2xl font-bold text-white font-mono group-hover:text-palantir-blue transition-colors truncate">${stat.value}</div>
+                        <div class="text-[10px] text-gray-500 mt-1 truncate">${stat.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('stats-container').innerHTML = statsHTML;
+
+            // Concept
+            document.getElementById('concept-container').innerHTML = `
+                <div class="glass-panel p-4 rounded-xl bg-gradient-to-br from-palantir-blue/10 to-transparent border-palantir-blue/20">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i class="ph ${data.concept.icon} text-xl text-palantir-blue"></i>
+                        <h4 class="font-bold text-white text-sm">${data.concept.title}</h4>
+                    </div>
+                    <p class="text-xs text-gray-400 leading-relaxed">${data.concept.text}</p>
+                </div>
+            `;
+
+            // Insight
+            document.getElementById('insight-title').innerText = data.insight.title;
+            document.getElementById('insight-body').innerHTML = data.insight.text;
+
+            // Visualization
+            document.getElementById('viz-container').innerHTML = data.viz;
+
+            // Q&A
+            const qaHTML = data.qa.map((item, idx) => `
+                <div class="glass-panel rounded-lg overflow-hidden border-palantir-blue/30">
+                    <button class="w-full text-left p-3 focus:outline-none flex justify-between items-center group" onclick="toggleQA(this)">
+                        <span class="font-bold text-gray-300 text-xs group-hover:text-palantir-blue transition-colors truncate pr-2">Q: ${item.q}</span>
+                        <i class="ph ph-caret-down text-gray-500 transform transition-transform duration-300 text-xs" style="transform: rotate(180deg);"></i>
+                    </button>
+                    <div class="overflow-hidden transition-all duration-300 bg-black/20" style="max-height: 500px;">
+                        <div class="p-3 pt-0 text-xs text-gray-400 border-t border-white/5 leading-relaxed">
+                            <span class="text-palantir-blue font-bold mr-1">A:</span> ${item.a}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('qa-container').innerHTML = qaHTML;
+        }
+
+        function toggleQA(btn) {
+            const panel = btn.nextElementSibling;
+            const icon = btn.querySelector('.ph-caret-down');
+
+            if (panel.style.maxHeight) {
+                panel.style.maxHeight = null;
+                icon.style.transform = 'rotate(0deg)';
+                btn.parentElement.classList.remove('border-palantir-blue/30');
+            } else {
+                panel.style.maxHeight = panel.scrollHeight + "px";
+                icon.style.transform = 'rotate(180deg)';
+                btn.parentElement.classList.add('border-palantir-blue/30');
+            }
+        }
+
+        // --- 3. Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Init with Leader Role
+            switchRole('leader');
+        });
+
+    </script>
+</body>
+
+</html>
